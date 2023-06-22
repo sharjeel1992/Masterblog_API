@@ -11,17 +11,21 @@ POSTS = [
 
 
 def validate_blog_data(data):
+    """
+    This function will be used with post method to validate the data.
+    """
     if "title" not in data or "content" not in data:
         return False
     return True
 
 
-@app.route('/api/posts', methods=['GET', 'POST'])
+@app.route('/api/posts', methods=['POST'])
 def get_posts():
-    """This method handle get and post methods and will do a necessary task according
-     to the request and also will throw an exception if any of the data is missing.
-     Post-method is used here for adding to blog and get is for sorting based on query string
-     """
+    """
+    This method handles post-methods requests only on this route.This method will
+    fetch data entered by user and will add that to database.This function will
+    throw an exception if any of the data is missing.
+    """
     if request.method == 'POST':
         data = request.get_json()
         if not validate_blog_data(data):
@@ -33,18 +37,6 @@ def get_posts():
         new_post = {"id": new_id, "title": title, "content": content}
         POSTS.append(new_post)
         return jsonify(POSTS), 201
-    if request.method == "GET":
-        sort = request.args.get('sort')
-        direction = request.args.get('direction')
-        if sort and sort not in ['title', 'content']:
-            return jsonify({"error": "Invalid sort field. Allowed values: title, content"}), 400
-        if direction and direction not in ['asc', 'desc']:
-            return jsonify({"error": "Invalid sort direction. Allowed values: asc, desc"}), 400
-        if sort and direction:
-            sorted_posts = sorted(POSTS, key=lambda x: x[sort], reverse=direction == 'desc')
-        else:
-            sorted_posts = POSTS
-        return jsonify(sorted_posts)
 
 
 @app.route('/api/posts/<int:id>', methods=["DELETE"])
@@ -88,22 +80,24 @@ def update_blog(id):
     return jsonify(post), 200
 
 
-@app.route('/api/posts/search', methods=["GET"])
-def search_blog():
+@app.route('/api/posts', methods=["GET"])
+def sort_blog():
     """
-    This function is process query parameter on the above-mentioned route based on keys of title
-     and content.it will run the query string on a database and will return matched data to the
-    that route
-     """
-    title = request.args.get('title')
-    content = request.args.get('content')
-    filtered_posts = []
-    for post in POSTS:
-        if title and title.lower() in post['title'].lower():
-            filtered_posts.append(post)
-        elif content and content.lower() in post['content'].lower():
-            filtered_posts.append(post)
-    return jsonify(filtered_posts)
+    This method takes the same route as add post but only deals with get requests.If query string is added
+    it will sort the posts based on query string.if no query string is passed it will simply return the posts.
+    """
+    if request.method == "GET":
+        sort = request.args.get('sort')
+        direction = request.args.get('direction')
+        if sort and sort not in ['title', 'content']:
+            return jsonify({"error": "Invalid sort field. Allowed values: title, content"}), 400
+        if direction and direction not in ['asc', 'desc']:
+            return jsonify({"error": "Invalid sort direction. Allowed values: asc, desc"}), 400
+        if sort and direction:
+            sorted_posts = sorted(POSTS, key=lambda x: x[sort], reverse=direction == 'desc')
+        else:
+            sorted_posts = POSTS
+        return jsonify(sorted_posts)
 
 
 if __name__ == '__main__':
